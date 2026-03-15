@@ -19,3 +19,6 @@ token.json
 # Tool outputs
 outputfolder/
 temp_htmls/
+
+# Extra unrelated tool
+capture_gui.ps1

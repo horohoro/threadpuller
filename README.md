@@ -38,6 +38,8 @@ To upload directly to Google Drive/Docs, you must configure OAuth Desktop applic
 ## 1. Using the GUI Desktop App (`app.py`)
 The easiest way to use these tools is through the graphical interface.
 
+![GUI Screenshot](gui_screenshot.png)
+
 **Running the app:**
 ```bash
 python app.py
