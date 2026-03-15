@@ -4,7 +4,7 @@ import subprocess
 import threading
 import sys
 import os
-from config import DEFAULT_GAME_ID, DEFAULT_OUTPUT_FOLDER
+from config import DEFAULT_GAME_ID, DEFAULT_OUTPUT_FOLDER, DEFAULT_CREDENTIALS_PATH
 
 class App:
     def __init__(self, root):
@@ -30,9 +30,18 @@ class App:
         self.browse_btn = tk.Button(root, text="Browse", command=self.browse_folder)
         self.browse_btn.grid(row=1, column=2, padx=10, pady=10)
 
+        # Credentials
+        tk.Label(root, text="Credentials:").grid(row=2, column=0, padx=10, pady=10, sticky="e")
+        self.creds_var = tk.StringVar(value=DEFAULT_CREDENTIALS_PATH)
+        self.creds_entry = tk.Entry(root, textvariable=self.creds_var)
+        self.creds_entry.grid(row=2, column=1, padx=10, pady=10, sticky="we")
+        
+        self.browse_creds_btn = tk.Button(root, text="Browse", command=self.browse_creds)
+        self.browse_creds_btn.grid(row=2, column=2, padx=10, pady=10)
+
         # Buttons
         self.btn_frame = tk.Frame(root)
-        self.btn_frame.grid(row=2, column=0, columnspan=3, pady=10)
+        self.btn_frame.grid(row=3, column=0, columnspan=3, pady=10)
 
         self.download_btn = tk.Button(self.btn_frame, text="DOWNLOAD", width=15, command=self.run_download)
         self.download_btn.pack(side=tk.LEFT, padx=10)
@@ -41,11 +50,11 @@ class App:
         self.upload_btn.pack(side=tk.LEFT, padx=10)
 
         # Output Text
-        tk.Label(root, text="Output:").grid(row=3, column=0, padx=10, sticky="nw")
+        tk.Label(root, text="Output:").grid(row=4, column=0, padx=10, sticky="nw")
         
         # Add a scrollbar to the text widget
         self.text_frame = tk.Frame(root)
-        self.text_frame.grid(row=4, column=0, columnspan=3, padx=10, pady=5, sticky="nsew")
+        self.text_frame.grid(row=5, column=0, columnspan=3, padx=10, pady=5, sticky="nsew")
         
         self.output_text = tk.Text(self.text_frame, height=15, width=60, state=tk.DISABLED)
         self.output_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -56,7 +65,7 @@ class App:
 
         # Configure resizing
         root.grid_columnconfigure(1, weight=1)
-        root.grid_rowconfigure(4, weight=1)
+        root.grid_rowconfigure(5, weight=1)
 
     def validate_game_id(self, P):
         if str.isdigit(P) or P == "":
@@ -74,6 +83,15 @@ class App:
         if folder_selected:
             # Normalize path for Windows to use backslashes, though both work
             self.folder_var.set(os.path.normpath(folder_selected))
+
+    def browse_creds(self):
+        initial_dir = os.path.dirname(os.path.abspath(self.creds_var.get()))
+        if not os.path.isdir(initial_dir):
+            initial_dir = os.path.dirname(os.path.abspath(__file__))
+            
+        file_selected = filedialog.askopenfilename(initialdir=initial_dir, filetypes=[("JSON files", "*.json"), ("All files", "*.*")])
+        if file_selected:
+            self.creds_var.set(os.path.normpath(file_selected))
 
     def append_output(self, text):
         self.output_text.config(state=tk.NORMAL)
@@ -129,12 +147,16 @@ class App:
 
     def run_upload(self):
         folder = self.folder_var.get().strip()
+        creds_path = self.creds_var.get().strip()
         if not folder:
             messagebox.showerror("Error", "Please select a folder")
             return
+        if not creds_path:
+            messagebox.showerror("Error", "Please select a credentials file")
+            return
             
         script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "upload_to_gdocs.py")
-        cmd = [sys.executable, "-u", script_path, "--input_folder", folder]
+        cmd = [sys.executable, "-u", script_path, "--input_folder", folder, "--credentials_path", creds_path]
         self.run_script(cmd)
 
 if __name__ == "__main__":

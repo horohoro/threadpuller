@@ -22,6 +22,7 @@ To download threads from BGG, you need a Bearer Token.
 2. Add your token inside the file:
    ```env
    BGG_BEARER_TOKEN=your_bgg_api_token_here
+   CREDENTIALS_PATH=credentials.json
    ```
 
 ### 3. Google Docs API Setup (for Uploading)
@@ -29,7 +30,7 @@ To upload directly to Google Drive/Docs, you must configure OAuth Desktop applic
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
 2. Create or select a Project and enable both the **Google Drive API** and **Google Docs API**.
 3. Go to **Credentials -> Create Credentials -> OAuth client ID -> Desktop app**.
-4. Download the generated `.json` file, rename it exactly to `credentials.json`, and place it in the project root folder.
+4. Download the generated `.json` file and securely store it. By default, the scripts look for `credentials.json` in the project root folder, but you can configure this path dynamically.
 *(Note: When you run the upload script for the very first time, it will open your web browser to authenticate your Google Account and generate a local `token.json` file for future uses).*
 
 ---
@@ -45,8 +46,9 @@ python app.py
 **How to use:**
 - **GAME_ID**: Input the BGG target game ID (e.g., `13` for Catan) found in its main URL.
 - **Folder**: Use the `Browse` button to select a local output/input directory.
+- **Credentials**: Use the `Browse` button to select your Google OAuth `credentials.json` file.
 - **DOWNLOAD**: Triggers `download_threads.py` using your selected ID and folder.
-- **UPLOAD**: Triggers `upload_to_gdocs.py` using your selected folder.
+- **UPLOAD**: Triggers `upload_to_gdocs.py` using your selected folder & credentials.
 - The logs and progress are seamlessly printed to the application output window at the bottom.
 
 ---
@@ -83,5 +85,5 @@ python upload_to_gdocs.py
 
 **Run with CLI override:**
 ```bash
-python upload_to_gdocs.py --input_folder ./gloomhaven_rules
+python upload_to_gdocs.py --input_folder ./gloomhaven_rules --credentials_path ./my_creds.json
 ```

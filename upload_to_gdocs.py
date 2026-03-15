@@ -13,14 +13,16 @@ from googleapiclient.http import MediaFileUpload
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
 import argparse
-from config import DEFAULT_OUTPUT_FOLDER
+from config import DEFAULT_OUTPUT_FOLDER, DEFAULT_CREDENTIALS_PATH
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--input_folder", default=DEFAULT_OUTPUT_FOLDER)
+parser.add_argument("--credentials_path", default=DEFAULT_CREDENTIALS_PATH)
 args, _ = parser.parse_known_args()
 
 # Folder containing the XML files to upload. Its foldername is used for the title of the Google Docs.
 INPUT_FOLDER = args.input_folder
+CREDENTIALS_PATH = args.credentials_path
 MAX_CHARS_PER_DOC = 900_000  # Google Docs limit is 1.02M characters
 
 def get_drive_service():
@@ -37,7 +39,7 @@ def get_drive_service():
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
+                CREDENTIALS_PATH, SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
         with open('token.json', 'w') as token:
@@ -182,15 +184,15 @@ def process_xml_files():
         print(f"\nError during upload segment: {e}")
 
 if __name__ == '__main__':
-    if not os.path.exists("credentials.json"):
+    if not os.path.exists(CREDENTIALS_PATH):
         print("="*60)
-        print("ERROR: 'credentials.json' not found in the current directory.")
+        print(f"ERROR: '{CREDENTIALS_PATH}' not found in the specified path.")
         print("To use the Google Docs/Drive API, you must:")
         print("1. Go to Google Cloud Console (https://console.cloud.google.com/)")
         print("2. Create a Project and enable the 'Google Drive API' and 'Google Docs API'.")
         print("3. Create Credentials -> OAuth client ID -> Desktop app.")
-        print("4. Download the JSON file and rename it to 'credentials.json'.")
-        print(f"5. Place it in the folder you are running the script from ({os.getcwd()}).")
+        print("4. Download the JSON file and securely store it.")
+        print("5. Provide the correct path via GUI, .env, or --credentials_path.")
         print("="*60)
         exit(1)
         
