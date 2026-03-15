@@ -12,11 +12,13 @@ load_dotenv()
 parser = argparse.ArgumentParser()
 parser.add_argument("--output_folder", default=DEFAULT_OUTPUT_FOLDER)
 parser.add_argument("--game_id", default=DEFAULT_GAME_ID)
+parser.add_argument("--auto_folder", action="store_true", help="Generate output folder based on game name")
 args, _ = parser.parse_known_args()
 
 # --- Configuration ---
-OUTPUT_FOLDER = args.output_folder
 GAME_ID = args.game_id
+
+import re
 
 BEARER_TOKEN = os.environ.get("BGG_BEARER_TOKEN")
 if not BEARER_TOKEN:
@@ -24,13 +26,38 @@ if not BEARER_TOKEN:
     exit(1)
 BASE_URL = "https://boardgamegeek.com/xmlapi2"
 
-# Ensure output directory exists
-if not os.path.exists(OUTPUT_FOLDER):
-    os.makedirs(OUTPUT_FOLDER)
-
 headers = {
     "Authorization": f"Bearer {BEARER_TOKEN}"
 }
+
+
+def fetch_game_name(game_id):
+    url = f"{BASE_URL}/thing?id={game_id}&type=boardgame"
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        root = etree.fromstring(response.content)
+        name_nodes = root.xpath('//name[@type="primary"]/@value')
+        if name_nodes:
+            return name_nodes[0]
+        raise ValueError(f"Could not find game name for ID {game_id}.")
+    raise ValueError(f"Could not fetch game name for ID {game_id}.")
+
+def sanitize_filename(filename):
+    return re.sub(r'[<>:"/\\|?*]', '', filename).strip()
+
+if args.auto_folder:
+    game_name = fetch_game_name(GAME_ID)
+    sanitized_name = sanitize_filename(game_name)
+    folder_name = f"{sanitized_name} ({GAME_ID})"
+    OUTPUT_FOLDER = os.path.join(args.output_folder, folder_name)
+else:
+    OUTPUT_FOLDER = args.output_folder
+
+print(f"Output folder: {OUTPUT_FOLDER}")
+
+# Ensure output directory exists
+if not os.path.exists(OUTPUT_FOLDER):
+    os.makedirs(OUTPUT_FOLDER)
 
 def fetch_rules_forum_details(game_id):
     """Finds the 'Rules' forum ID and expected thread count."""

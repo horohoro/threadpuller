@@ -22,7 +22,8 @@ class App:
         self.game_id_entry.grid(row=0, column=1, padx=10, pady=10, sticky="we")
 
         # Folder
-        tk.Label(root, text="Folder:").grid(row=1, column=0, padx=10, pady=10, sticky="e")
+        self.folder_label = tk.Label(root, text="Base Folder:")
+        self.folder_label.grid(row=1, column=0, padx=10, pady=10, sticky="e")
         self.folder_var = tk.StringVar(value=DEFAULT_OUTPUT_FOLDER)
         self.folder_entry = tk.Entry(root, textvariable=self.folder_var)
         self.folder_entry.grid(row=1, column=1, padx=10, pady=10, sticky="we")
@@ -30,18 +31,23 @@ class App:
         self.browse_btn = tk.Button(root, text="Browse", command=self.browse_folder)
         self.browse_btn.grid(row=1, column=2, padx=10, pady=10)
 
+        # Auto Folder Checkbox
+        self.auto_folder_var = tk.BooleanVar(value=True)
+        self.auto_folder_chk = tk.Checkbutton(root, text="Auto-generate sub-folder from Game Name", variable=self.auto_folder_var, command=self.toggle_auto_folder)
+        self.auto_folder_chk.grid(row=2, column=1, sticky="w")
+
         # Credentials
-        tk.Label(root, text="Credentials:").grid(row=2, column=0, padx=10, pady=10, sticky="e")
+        tk.Label(root, text="Credentials:").grid(row=3, column=0, padx=10, pady=10, sticky="e")
         self.creds_var = tk.StringVar(value=DEFAULT_CREDENTIALS_PATH)
         self.creds_entry = tk.Entry(root, textvariable=self.creds_var)
-        self.creds_entry.grid(row=2, column=1, padx=10, pady=10, sticky="we")
+        self.creds_entry.grid(row=3, column=1, padx=10, pady=10, sticky="we")
         
         self.browse_creds_btn = tk.Button(root, text="Browse", command=self.browse_creds)
-        self.browse_creds_btn.grid(row=2, column=2, padx=10, pady=10)
+        self.browse_creds_btn.grid(row=3, column=2, padx=10, pady=10)
 
         # Buttons
         self.btn_frame = tk.Frame(root)
-        self.btn_frame.grid(row=3, column=0, columnspan=3, pady=10)
+        self.btn_frame.grid(row=4, column=0, columnspan=3, pady=10)
 
         self.download_btn = tk.Button(self.btn_frame, text="DOWNLOAD", width=15, command=self.run_download)
         self.download_btn.pack(side=tk.LEFT, padx=10)
@@ -50,11 +56,11 @@ class App:
         self.upload_btn.pack(side=tk.LEFT, padx=10)
 
         # Output Text
-        tk.Label(root, text="Output:").grid(row=4, column=0, padx=10, sticky="nw")
+        tk.Label(root, text="Output:").grid(row=5, column=0, padx=10, sticky="nw")
         
         # Add a scrollbar to the text widget
         self.text_frame = tk.Frame(root)
-        self.text_frame.grid(row=5, column=0, columnspan=3, padx=10, pady=5, sticky="nsew")
+        self.text_frame.grid(row=6, column=0, columnspan=3, padx=10, pady=5, sticky="nsew")
         
         self.output_text = tk.Text(self.text_frame, height=15, width=60, state=tk.DISABLED)
         self.output_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -65,7 +71,13 @@ class App:
 
         # Configure resizing
         root.grid_columnconfigure(1, weight=1)
-        root.grid_rowconfigure(5, weight=1)
+        root.grid_rowconfigure(6, weight=1)
+
+    def toggle_auto_folder(self):
+        if self.auto_folder_var.get():
+            self.folder_label.config(text="Base Folder:")
+        else:
+            self.folder_label.config(text="Folder:")
 
     def validate_game_id(self, P):
         if str.isdigit(P) or P == "":
@@ -143,9 +155,12 @@ class App:
             
         script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "download_threads.py")
         cmd = [sys.executable, "-u", script_path, "--game_id", game_id, "--output_folder", folder]
+        if self.auto_folder_var.get():
+            cmd.append("--auto_folder")
         self.run_script(cmd)
 
     def run_upload(self):
+        game_id = self.game_id_var.get().strip()
         folder = self.folder_var.get().strip()
         creds_path = self.creds_var.get().strip()
         if not folder:
@@ -157,6 +172,8 @@ class App:
             
         script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "upload_to_gdocs.py")
         cmd = [sys.executable, "-u", script_path, "--input_folder", folder, "--credentials_path", creds_path]
+        if self.auto_folder_var.get() and game_id:
+            cmd.extend(["--game_id", game_id])
         self.run_script(cmd)
 
 if __name__ == "__main__":

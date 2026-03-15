@@ -18,10 +18,27 @@ from config import DEFAULT_OUTPUT_FOLDER, DEFAULT_CREDENTIALS_PATH
 parser = argparse.ArgumentParser()
 parser.add_argument("--input_folder", default=DEFAULT_OUTPUT_FOLDER)
 parser.add_argument("--credentials_path", default=DEFAULT_CREDENTIALS_PATH)
+parser.add_argument("--game_id", default=None, help="If provided, input_folder is treated as a base folder and the script will search for a subfolder ending with ({game_id})")
 args, _ = parser.parse_known_args()
 
 # Folder containing the XML files to upload. Its foldername is used for the title of the Google Docs.
 INPUT_FOLDER = args.input_folder
+
+if args.game_id:
+    base_folder = args.input_folder
+    found_folder = None
+    if os.path.exists(base_folder):
+        for entry in os.listdir(base_folder):
+            full_path = os.path.join(base_folder, entry)
+            if os.path.isdir(full_path) and entry.endswith(f"({args.game_id})"):
+                found_folder = full_path
+                break
+    if found_folder:
+        INPUT_FOLDER = found_folder
+    else:
+        print(f"Error: Could not find a folder for game ID {args.game_id} in {base_folder}")
+        exit(1)
+
 CREDENTIALS_PATH = args.credentials_path
 MAX_CHARS_PER_DOC = 900_000  # Google Docs limit is 1.02M characters
 
@@ -70,6 +87,8 @@ def unescape_body_html(xml_body):
 
 def process_xml_files():
     folder_name = os.path.basename(os.path.normpath(INPUT_FOLDER))
+    if args.game_id and folder_name.endswith(f"({args.game_id})"):
+        folder_name = folder_name[:-len(f"({args.game_id})")].strip()
     if not folder_name:
         folder_name = "BGG Threads"
 

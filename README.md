@@ -45,7 +45,8 @@ python app.py
 
 **How to use:**
 - **GAME_ID**: Input the BGG target game ID (e.g., `13` for Catan) found in its main URL.
-- **Folder**: Use the `Browse` button to select a local output/input directory.
+- **Base Folder / Folder**: Use the `Browse` button to select a local output/input directory.
+- **Auto-generate sub-folder from Game Name**: When checked (default), automatically creates a subfolder formatted as `Game Name (GAME_ID)` inside your Base Folder, avoiding manual folder creation for each game.
 - **Credentials**: Use the `Browse` button to select your Google OAuth `credentials.json` file.
 - **DOWNLOAD**: Triggers `download_threads.py` using your selected ID and folder.
 - **UPLOAD**: Triggers `upload_to_gdocs.py` using your selected folder & credentials.
@@ -75,6 +76,12 @@ python download_threads.py
 python download_threads.py --game_id 174430 --output_folder ./gloomhaven_rules
 ```
 
+**Run with Automatic Folder Generation:**
+```bash
+python download_threads.py --game_id 174430 --output_folder ./downloads --auto_folder
+```
+*This will fetch the game name and automatically place the threads inside `./downloads/Gloomhaven (174430)`.*
+
 ### Uploading threads: `upload_to_gdocs.py`
 This script takes a folder of BGG XML discussions and stitches them into an extensive HTML structured stream with subjects and chat logs. If a compiled document exceeds the Google Docs character limit (approx 1M characters), the script will automatically split it into consecutive "Part X" documents to avoid API upload failures.
 
@@ -87,3 +94,9 @@ python upload_to_gdocs.py
 ```bash
 python upload_to_gdocs.py --input_folder ./gloomhaven_rules --credentials_path ./my_creds.json
 ```
+
+**Run using a Game ID to automatically find the folder:**
+```bash
+python upload_to_gdocs.py --input_folder ./downloads --game_id 174430 --credentials_path ./my_creds.json
+```
+*When `--game_id` is provided, the script searches the `--input_folder` for a subfolder ending in `(174430)` and will omit the game ID from the final uploaded Google Docs title.*
