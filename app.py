@@ -46,6 +46,7 @@ class App:
         self.browse_creds_btn.grid(row=3, column=2, padx=10, pady=10)
 
         # Buttons
+        self.current_process = None
         self.btn_frame = tk.Frame(root)
         self.btn_frame.grid(row=4, column=0, columnspan=3, pady=10)
 
@@ -54,6 +55,9 @@ class App:
 
         self.upload_btn = tk.Button(self.btn_frame, text="UPLOAD", width=15, command=self.run_upload)
         self.upload_btn.pack(side=tk.LEFT, padx=10)
+
+        self.stop_btn = tk.Button(self.btn_frame, text="STOP", width=15, command=self.stop_process, state=tk.DISABLED, bg="red", fg="white")
+        self.stop_btn.pack(side=tk.LEFT, padx=10)
 
         # Output Text
         tk.Label(root, text="Output:").grid(row=5, column=0, padx=10, sticky="nw")
@@ -114,13 +118,14 @@ class App:
     def run_script(self, cmd):
         self.download_btn.config(state=tk.DISABLED)
         self.upload_btn.config(state=tk.DISABLED)
+        self.stop_btn.config(state=tk.NORMAL)
         self.output_text.config(state=tk.NORMAL)
         self.output_text.delete(1.0, tk.END)
         self.output_text.config(state=tk.DISABLED)
 
         def worker():
             try:
-                process = subprocess.Popen(
+                self.current_process = subprocess.Popen(
                     cmd,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
@@ -129,19 +134,25 @@ class App:
                     creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
                 )
 
-                for line in process.stdout:
+                for line in self.current_process.stdout:
                     self.root.after(0, self.append_output, line)
 
-                process.stdout.close()
-                process.wait()
-                self.root.after(0, self.append_output, f"\nProcess finished with code {process.returncode}\n")
+                self.current_process.stdout.close()
+                self.current_process.wait()
+                self.root.after(0, self.append_output, f"\nProcess finished with code {self.current_process.returncode}\n")
             except Exception as e:
                 self.root.after(0, self.append_output, f"\nError running script: {str(e)}\n")
             finally:
                 self.root.after(0, lambda: self.download_btn.config(state=tk.NORMAL))
                 self.root.after(0, lambda: self.upload_btn.config(state=tk.NORMAL))
+                self.root.after(0, lambda: self.stop_btn.config(state=tk.DISABLED))
 
         threading.Thread(target=worker, daemon=True).start()
+
+    def stop_process(self):
+        if self.current_process and self.current_process.poll() is None:
+            self.current_process.terminate()
+            self.append_output("\nProcess stopped by user.\n")
 
     def run_download(self):
         game_id = self.game_id_var.get().strip()
